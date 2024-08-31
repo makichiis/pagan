@@ -30,8 +30,12 @@ Cursor_u8 Cursor_u8_from(uint8_t* ubuf, size_t sz) {
 bool png_data_is_valid(Cursor_u8 data);
 void png_from_bytes(PNG* png, Cursor_u8 data);
 
-int main() {
-    FILE* imgfp = fopen("tiny.png", "r");
+int main(int argc, const char** argv) {
+    const char* imgfpath = "tiny.png";
+    if (argc >= 2)
+        imgfpath = argv[1];
+
+    FILE* imgfp = fopen(imgfpath, "r");
     if (!imgfp) {
         perror("Failed to open file");
         return 1;
@@ -116,18 +120,34 @@ void chunk_from_bytes(Chunk* chunk, Cursor_u8 data) {
                | data.begin[3];
 }
 
+void display_chunk(const Chunk* chunk) {
+    printf("chunk type: %.4s\n", chunk->label);
+    printf("chunk body (%dB):", chunk->length);
+    
+    for (int i = 0; i < chunk->length; ++i) {
+        if (i % 8 == 0) printf("\n0x ");
+        printf("%.2X ", chunk->data[i]);
+    } puts("");
+
+    printf("chksm: 0x%.8X\n", chunk->crc);
+
+}
+
 void png_from_bytes(PNG* png, Cursor_u8 data) {
     Chunk ihdr;
     chunk_from_bytes(&ihdr, data);
+    data.begin += MIN_CHUNK_SZ + ihdr.length;
 
-    printf("chunk type: %.4s\n", ihdr.label);
-    printf("chunk body (%dB):", ihdr.length);
-    
-    for (int i = 0; i < ihdr.length; ++i) {
-        if (i % 8 == 0) printf("\n0x ");
-        printf("%.2X ", ihdr.data[i]);
-    } puts("");
+    display_chunk(&ihdr);
+    puts("");
 
-    printf("chksm: %d\n", ihdr.crc);
+    Chunk chunk = ihdr;
+    while (strncmp(chunk.label, "IEND", 4) != 0) {
+        chunk_from_bytes(&chunk, data);
+        data.begin += MIN_CHUNK_SZ + chunk.length;
+
+        display_chunk(&chunk);
+        puts("");
+    }
 }
 
