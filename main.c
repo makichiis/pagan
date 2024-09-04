@@ -23,8 +23,8 @@ typedef struct PNG {
 
 #define MAGIC_HEADER_SZ 8
 
-Cursor_u8 Cursor_u8_from(uint8_t* ubuf, size_t sz) {
-    return (struct Cursor_u8){ ubuf, ubuf + sz };
+Cursor_u8 Cursor_u8_from(uint8_t* u8buf, size_t sz) {
+    return (struct Cursor_u8){ u8buf, u8buf + sz };
 }
 
 bool png_data_is_valid(Cursor_u8 data);
@@ -125,7 +125,7 @@ void display_chunk(const Chunk* chunk) {
     printf("chunk body (%dB):", chunk->length);
     
     for (int i = 0; i < chunk->length; ++i) {
-        if (i % 8 == 0) printf("\n0x ");
+        if (i % 16 == 0) printf("\n0x ");
         printf("%.2X ", chunk->data[i]);
     } puts("");
 
